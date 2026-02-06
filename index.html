@@ -11,11 +11,11 @@
             --bg-dark: #0f0f0f;
             --sidebar-bg: #151515;
             --text-main: #e0e0e0;
-            --accent: #ff4444; /* Для видалення */
+            --accent-red: #ff4444;
         }
 
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-main);
             margin: 0;
@@ -34,18 +34,20 @@
         }
 
         .sidebar-header {
-            padding: 20px;
+            padding: 25px 20px;
             text-align: center;
+            border-bottom: 1px solid #282828;
         }
 
         .sidebar-header h1 {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             margin: 0;
             color: var(--primary);
             letter-spacing: 2px;
+            text-transform: uppercase;
         }
 
-        .search-box { padding: 10px 15px; }
+        .search-box { padding: 15px; }
         .search-box input {
             width: 100%;
             padding: 10px 15px;
@@ -54,29 +56,40 @@
             border-radius: 20px;
             color: white;
             box-sizing: border-box;
+            outline: none;
         }
 
+        .search-box input:focus { border-color: var(--primary); }
+
         .create-box {
-            padding: 15px;
+            padding: 0 15px 15px 15px;
             display: flex;
             gap: 8px;
             border-bottom: 1px solid #282828;
         }
 
-        .create-box input { flex-grow: 1; background: #222; border: 1px solid #333; color: white; border-radius: 8px; padding: 8px; }
+        .create-box input {
+            flex-grow: 1;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            outline: none;
+        }
 
-        .btn-primary {
+        .btn-main {
             background: var(--primary);
             color: black;
             font-weight: bold;
             border: none;
-            padding: 8px 15px;
+            padding: 10px 15px;
             border-radius: 8px;
             cursor: pointer;
-            transition: 0.2s;
+            transition: 0.2s ease;
         }
 
-        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-main:hover { background: var(--primary-hover); transform: translateY(-1px); }
 
         #groupsList {
             flex-grow: 1;
@@ -88,28 +101,30 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px;
-            margin-bottom: 5px;
-            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 10px;
             cursor: pointer;
+            background: rgba(255,255,255,0.03);
             transition: 0.2s;
         }
 
-        .group-item:hover { background: #252525; }
-        .group-item.active { background: #2d2d2d; border-left: 4px solid var(--primary); }
+        .group-item:hover { background: rgba(255,255,255,0.08); }
+        .group-item.active { 
+            background: rgba(179, 141, 29, 0.15); 
+            border-left: 4px solid var(--primary); 
+        }
 
-        .btn-delete {
-            background: transparent;
+        .delete-icon {
             color: #555;
-            border: none;
-            cursor: pointer;
             font-size: 1.2rem;
+            line-height: 1;
             transition: 0.2s;
         }
 
-        .btn-delete:hover { color: var(--accent); }
+        .delete-icon:hover { color: var(--accent-red); }
 
-        /* --- CHAT --- */
+        /* --- CHAT AREA --- */
         .main-chat {
             flex-grow: 1;
             display: flex;
@@ -118,150 +133,96 @@
         }
 
         .chat-header {
-            padding: 18px 25px;
-            background: rgba(21, 21, 21, 0.9);
+            padding: 20px 30px;
+            background: rgba(21, 21, 21, 0.95);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid #282828;
         }
 
         #messagesBox {
             flex-grow: 1;
-            padding: 20px;
+            padding: 25px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 15px;
         }
 
         .msg {
-            max-width: 65%;
-            padding: 10px 16px;
-            border-radius: 15px;
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 18px;
             font-size: 0.95rem;
-            line-height: 1.4;
-            word-wrap: break-word;
+            line-height: 1.5;
+            position: relative;
+            animation: fadeIn 0.3s ease;
         }
 
-        .msg-sent { background: var(--primary); color: black; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .msg-received { background: #2a2a2a; color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .msg-sent { 
+            background: var(--primary); 
+            color: black; 
+            align-self: flex-end; 
+            border-bottom-right-radius: 4px;
+            font-weight: 500;
+        }
+
+        .msg-received { 
+            background: #2a2a2a; 
+            color: white; 
+            align-self: flex-start; 
+            border-bottom-left-radius: 4px;
+        }
 
         .input-area {
-            padding: 20px;
+            padding: 20px 30px;
             background: #151515;
             display: flex;
-            gap: 10px;
+            gap: 12px;
+            align-items: center;
         }
 
         .input-area input {
             flex-grow: 1;
-            background: #252525;
+            background: #222;
             border: 1px solid #333;
             color: white;
-            padding: 12px;
-            border-radius: 10px;
+            padding: 14px;
+            border-radius: 12px;
             outline: none;
+            transition: 0.2s;
+        }
+
+        .input-area input:focus { border-color: var(--primary); }
+
+        /* Welcome Screen */
+        .welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #444;
+            text-align: center;
         }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="sidebar-header"><h1>YARTAL HUB</h1></div>
+        <div class="sidebar-header">
+            <h1>Yartal Hub</h1>
+        </div>
 
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Пошук гільдії..." oninput="filterGroups()">
+            <input type="text" id="searchInput" placeholder="Шукати гільдію..." oninput="filterGroups()">
         </div>
         
         <div class="create-box">
-            <input type="text" id="groupName" placeholder="Назва гільдії...">
-            <button class="btn-primary" onclick="createGroup()">+</button>
+            <input type="text" id="groupNameInput" placeholder="Назва нової..." onkeypress="if(event.key==='Enter') createGroup()">
+            <button class="btn-main" onclick="createGroup()">+</button>
         </div>
 
         <div id="groupsList"></div>
     </div>
-
-    <div class="main-chat">
-        <div id="welcomeScreen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-            <h2 style="opacity: 0.3;">Оберіть гільдію для початку</h2>
-        </div>
-
-        <div id="chatContent" style="display: none; flex-direction: column; height: 100%;">
-            <div class="chat-header">
-                <h2 id="currentGroupName" style="margin:0; font-size: 1.2rem;"></h2>
-            </div>
-            <div id="messagesBox"></div>
-            <div class="input-area">
-                <input type="text" id="msgInput" placeholder="Напишіть повідомлення..." onkeypress="if(event.key==='Enter') sendMsg()">
-                <button class="btn-primary" onclick="sendMsg()">Надіслати</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let groups = JSON.parse(localStorage.getItem('yartal_groups')) || [];
-        let activeId = null;
-        let searchTerm = "";
-
-        const save = () => localStorage.setItem('yartal_groups', JSON.stringify(groups));
-
-        function createGroup() {
-            const input = document.getElementById('groupName');
-            const name = input.value.trim();
-            if (!name) return;
-            
-            const newGroup = { id: Date.now(), name: name, messages: [] };
-            groups.push(newGroup);
-            input.value = '';
-            save();
-            renderGroups();
-        }
-
-        function deleteGroup(id, event) {
-            event.stopPropagation(); // Щоб не відкривався чат при видаленні
-            if (!confirm("Видалити цю гільдію?")) return;
-            groups = groups.filter(g => g.id !== id);
-            if (activeId === id) {
-                activeId = null;
-                document.getElementById('chatContent').style.display = 'none';
-                document.getElementById('welcomeScreen').style.display = 'flex';
-            }
-            save();
-            renderGroups();
-        }
-
-        function filterGroups() {
-            searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            renderGroups();
-        }
-
-        function renderGroups() {
-            const list = document.getElementById('groupsList');
-            list.innerHTML = '';
-            
-            const filtered = groups.filter(g => g.name.toLowerCase().includes(searchTerm));
-
-            filtered.forEach(g => {
-                const div = document.createElement('div');
-                div.className = `group-item ${g.id === activeId ? 'active' : ''}`;
-                div.onclick = () => openChat(g.id);
-                div.innerHTML = `
-                    <strong># ${g.name}</strong>
-                    <button class="btn-delete" onclick="deleteGroup(${g.id}, event)">×</button>
-                `;
-                list.appendChild(div);
-            });
-        }
-
-        function openChat(id) {
-            activeId = id;
-            const group = groups.find(g => g.id === id);
-            document.getElementById('welcomeScreen').style.display = 'none';
-            document.getElementById('chatContent').style.display = 'flex';
-            document.getElementById('currentGroupName').innerText = `# ${group.name}`;
-            renderGroups();
-            renderMessages();
-        }
-
-        function sendMsg() {
-            const input = document.getElementById('msgInput');
-            const
