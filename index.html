@@ -2,113 +2,153 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Games Hub - Спільноти Яртала</title>
+    <title>Яртал - Гільдії та Чати</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        #app-container { width: 100%; max-width: 600px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; margin: 0; display: flex; height: 100vh; }
         
-        .create-form { background: #252525; padding: 20px; border-radius: 12px; border: 1px dashed #b38d1d; margin-bottom: 30px; }
+        /* Ліва панель (Створення та список) */
+        .sidebar { width: 40%; border-right: 1px solid #333; padding: 20px; overflow-y: auto; background: #1a1a1a; }
         
+        /* Права панель (Чат) */
+        .chat-container { width: 60%; display: flex; flex-direction: column; background: #141414; position: relative; }
+        
+        .group-card { 
+            background: #252525; border-left: 4px solid #b38d1d; padding: 15px; 
+            margin-bottom: 15px; border-radius: 6px; cursor: pointer; transition: 0.2s;
+        }
+        .group-card:hover { background: #333; }
+        .group-card.active { border-left-color: #00ff88; background: #2d2d2d; }
+
         input, textarea { 
-            display: block; width: 100%; margin-bottom: 15px; padding: 12px; 
-            background: #333; border: 1px solid #444; color: white; border-radius: 6px; box-sizing: border-box;
+            width: 100%; padding: 10px; margin-bottom: 10px; 
+            background: #222; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box;
         }
         
         button { 
-            background: #b38d1d; border: none; padding: 12px 25px; cursor: pointer; 
-            color: white; font-weight: bold; border-radius: 6px; width: 100%; transition: 0.3s;
+            background: #b38d1d; border: none; padding: 10px; cursor: pointer; 
+            color: white; font-weight: bold; border-radius: 5px; width: 100%;
         }
-        button:hover { background: #d4a724; transform: scale(1.02); }
 
-        .group-card { 
-            background: #2a2a2a; border-left: 5px solid #b38d1d; padding: 15px; 
-            margin: 15px 0; border-radius: 4px; animation: fadeIn 0.5s ease-out;
-        }
+        /* Стилі чату */
+        #chat-header { padding: 15px; background: #1f1f1f; border-bottom: 1px solid #333; font-weight: bold; color: #b38d1d; }
+        #messages-box { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .message { background: #333; padding: 8px 12px; border-radius: 10px; max-width: 80%; width: fit-content; }
+        .message.my-msg { align-self: flex-end; background: #b38d1d; color: black; }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .empty-msg { color: #666; text-align: center; font-style: italic; }
+        #chat-input-area { padding: 15px; display: flex; gap: 10px; background: #1f1f1f; }
+        #chat-input-area input { margin-bottom: 0; }
+        #chat-input-area button { width: auto; }
+        
+        .empty-chat { text-align: center; color: #555; margin-top: 50px; }
     </style>
 </head>
 <body>
 
-    <div id="app-container">
-        <h1>Спільноти Яртала</h1>
-        <p style="color: #b38d1d;">Автор: Ярик Пашко Васильович</p>
-
-        <div class="create-form">
-            <h3>Крок 1: Введіть назву</h3>
-            <input type="text" id="groupName" placeholder="Наприклад: Гільдія Мисливців">
-            
-            <h3>Крок 2: Опишіть вашу групу</h3>
-            <textarea id="groupDesc" placeholder="Чим ви займаєтесь?" rows="3"></textarea>
-            
-            <h3>Крок 3: Створіть магію</h3>
-            <button onclick="addNewGroup()">Додати спільноту до списку</button>
+    <div class="sidebar">
+        <h2>Спільноти Яртала</h2>
+        <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #444; border-radius: 8px;">
+            <input type="text" id="groupName" placeholder="Назва гільдії">
+            <textarea id="groupDesc" placeholder="Опис" rows="2"></textarea>
+            <button onclick="createGroup()">Створити гільдію</button>
         </div>
+        <div id="groupsList"></div>
+    </div>
 
-        <hr style="border: 0; border-top: 1px solid #444; margin: 40px 0;">
-
-        <h2>Активні спільноти</h2>
-        <div id="groupsList">
-            <p class="empty-msg">Тут поки порожньо. Будь першим, хто створить групу!</p>
+    <div class="chat-container" id="chatWindow">
+        <div id="chat-header">Виберіть спільноту, щоб почати чат</div>
+        <div id="messages-box">
+            <p class="empty-chat">Тут з'являться ваші повідомлення...</p>
+        </div>
+        <div id="chat-input-area" style="display: none;">
+            <input type="text" id="msgText" placeholder="Напишіть щось..." onkeypress="handleEnter(event)">
+            <button onclick="sendMessage()" style="width: 80px;">Відправити</button>
         </div>
     </div>
 
     <script>
-        // Масив, де зберігаються групи "в пам'яті" браузера
         let groups = [];
+        let activeGroupId = null;
+
+        function createGroup() {
+            const name = document.getElementById('groupName').value.trim();
+            const desc = document.getElementById('groupDesc').value.trim();
+
+            if (!name) return alert("Введіть назву!");
+
+            const newGroup = {
+                id: Date.now(),
+                name: name,
+                description: desc,
+                messages: [] // Масив для зберігання повідомлень цієї групи
+            };
+
+            groups.push(newGroup);
+            document.getElementById('groupName').value = '';
+            document.getElementById('groupDesc').value = '';
+            renderGroups();
+        }
 
         function renderGroups() {
             const list = document.getElementById('groupsList');
-            
-            if (groups.length === 0) {
-                list.innerHTML = '<p class="empty-msg">Тут поки порожньо. Будь першим, хто створить групу!</p>';
-                return;
-            }
-
-            list.innerHTML = ''; // Очищаємо список перед оновленням
-            
-            // Проходимо по масиву в зворотному порядку (нові зверху)
-            groups.slice().reverse().forEach(g => {
+            list.innerHTML = '';
+            groups.forEach(g => {
+                const isActive = g.id === activeGroupId ? 'active' : '';
                 list.innerHTML += `
-                    <div class="group-card">
-                        <h3 style="margin-top: 0; color: #b38d1d;">${g.name}</h3>
-                        <p style="margin-bottom: 0;">${g.description}</p>
+                    <div class="group-card ${isActive}" onclick="openChat(${g.id})">
+                        <strong>${g.name}</strong>
+                        <p style="font-size: 0.8em; margin: 5px 0 0 0; opacity: 0.7;">${g.description}</p>
                     </div>
                 `;
             });
         }
 
-        function addNewGroup() {
-            const name = document.getElementById('groupName').value.trim();
-            const desc = document.getElementById('groupDesc').value.trim();
-
-            // Перевірка, чи не порожні поля
-            if (name === "" || desc === "") {
-                alert("Ей, заповни всі поля! Гільдія не може бути без назви.");
-                return;
-            }
-
-            // Додаємо новий об'єкт у наш список
-            const newGroup = {
-                name: name,
-                description: desc
-            };
-
-            groups.push(newGroup);
-
-            // Очищуємо поля введення
-            document.getElementById('groupName').value = '';
-            document.getElementById('groupDesc').value = '';
-
-            // Оновлюємо відображення на екрані
-            renderGroups();
+        function openChat(id) {
+            activeGroupId = id;
+            const group = groups.find(g => g.id === id);
             
-            console.log("Додано нову групу:", name);
+            document.getElementById('chat-header').innerText = `Чат гільдії: ${group.name}`;
+            document.getElementById('chat-input-area').style.display = 'flex';
+            
+            renderGroups(); // Оновлюємо вигляд списку (підсвітка)
+            renderMessages();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('msgText');
+            const text = input.value.trim();
+            
+            if (!text || activeGroupId === null) return;
+
+            const group = groups.find(g => g.id === activeGroupId);
+            group.messages.push({
+                text: text,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            });
+
+            input.value = '';
+            renderMessages();
+        }
+
+        function renderMessages() {
+            const box = document.getElementById('messages-box');
+            const group = groups.find(g => g.id === activeGroupId);
+            
+            box.innerHTML = '';
+            group.messages.forEach(m => {
+                box.innerHTML += `
+                    <div class="message my-msg">
+                        <div>${m.text}</div>
+                        <div style="font-size: 0.6em; text-align: right; opacity: 0.6;">${m.time}</div>
+                    </div>
+                `;
+            });
+            
+            // Авто-прокрутка вниз
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') sendMessage();
         }
     </script>
 </body>
