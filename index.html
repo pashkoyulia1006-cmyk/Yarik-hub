@@ -1,228 +1,63 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yartal Hub | Спільноти</title>
-    <style>
-        :root {
-            --primary: #b38d1d;
-            --primary-hover: #d4a724;
-            --bg-dark: #0f0f0f;
-            --sidebar-bg: #151515;
-            --text-main: #e0e0e0;
-            --accent-red: #ff4444;
-        }
+<script>
+    // 1. Перевіряємо, чи працює пам'ять браузера
+    let groups = [];
+    try {
+        const saved = localStorage.getItem('yartal_v3');
+        if (saved) groups = JSON.parse(saved);
+        console.log("Дані завантажено:", groups);
+    } catch (e) {
+        alert("Помилка доступу до пам'яті: " + e.message);
+    }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
+    let activeId = null;
 
-        /* --- SIDEBAR --- */
-        .sidebar {
-            width: 320px;
-            background: var(--sidebar-bg);
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid #282828;
-        }
+    function save() {
+        localStorage.setItem('yartal_v3', JSON.stringify(groups));
+    }
 
-        .sidebar-header {
-            padding: 25px 20px;
-            text-align: center;
-            border-bottom: 1px solid #282828;
-        }
-
-        .sidebar-header h1 {
-            font-size: 1.3rem;
-            margin: 0;
-            color: var(--primary);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        .search-box { padding: 15px; }
-        .search-box input {
-            width: 100%;
-            padding: 10px 15px;
-            background: #222;
-            border: 1px solid #333;
-            border-radius: 20px;
-            color: white;
-            box-sizing: border-box;
-            outline: none;
-        }
-
-        .search-box input:focus { border-color: var(--primary); }
-
-        .create-box {
-            padding: 0 15px 15px 15px;
-            display: flex;
-            gap: 8px;
-            border-bottom: 1px solid #282828;
-        }
-
-        .create-box input {
-            flex-grow: 1;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            outline: none;
-        }
-
-        .btn-main {
-            background: var(--primary);
-            color: black;
-            font-weight: bold;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.2s ease;
-        }
-
-        .btn-main:hover { background: var(--primary-hover); transform: translateY(-1px); }
-
-        #groupsList {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 10px;
-        }
-
-        .group-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            border-radius: 10px;
-            cursor: pointer;
-            background: rgba(255,255,255,0.03);
-            transition: 0.2s;
-        }
-
-        .group-item:hover { background: rgba(255,255,255,0.08); }
-        .group-item.active { 
-            background: rgba(179, 141, 29, 0.15); 
-            border-left: 4px solid var(--primary); 
-        }
-
-        .delete-icon {
-            color: #555;
-            font-size: 1.2rem;
-            line-height: 1;
-            transition: 0.2s;
-        }
-
-        .delete-icon:hover { color: var(--accent-red); }
-
-        /* --- CHAT AREA --- */
-        .main-chat {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            background: radial-gradient(circle at center, #1a1a1a 0%, #0f0f0f 100%);
-        }
-
-        .chat-header {
-            padding: 20px 30px;
-            background: rgba(21, 21, 21, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid #282828;
-        }
-
-        #messagesBox {
-            flex-grow: 1;
-            padding: 25px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .msg {
-            max-width: 70%;
-            padding: 12px 18px;
-            border-radius: 18px;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            position: relative;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        .msg-sent { 
-            background: var(--primary); 
-            color: black; 
-            align-self: flex-end; 
-            border-bottom-right-radius: 4px;
-            font-weight: 500;
-        }
-
-        .msg-received { 
-            background: #2a2a2a; 
-            color: white; 
-            align-self: flex-start; 
-            border-bottom-left-radius: 4px;
-        }
-
-        .input-area {
-            padding: 20px 30px;
-            background: #151515;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .input-area input {
-            flex-grow: 1;
-            background: #222;
-            border: 1px solid #333;
-            color: white;
-            padding: 14px;
-            border-radius: 12px;
-            outline: none;
-            transition: 0.2s;
-        }
-
-        .input-area input:focus { border-color: var(--primary); }
-
-        /* Welcome Screen */
-        .welcome {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #444;
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h1>Yartal Hub</h1>
-        </div>
-
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Шукати гільдію..." oninput="filterGroups()">
-        </div>
+    function createGroup() {
+        console.log("Спроба створити групу...");
+        const input = document.getElementById('groupNameInput');
         
-        <div class="create-box">
-            <input type="text" id="groupNameInput" placeholder="Назва нової..." onkeypress="if(event.key==='Enter') createGroup()">
-            <button class="btn-main" onclick="createGroup()">+</button>
-        </div>
+        if (!input) {
+            alert("Помилка: Поле вводу не знайдено в HTML!");
+            return;
+        }
 
-        <div id="groupsList"></div>
-    </div>
+        const name = input.value.trim();
+        
+        if (!name) {
+            alert("Напишіть хоча б одну букву в назву!");
+            return;
+        }
+
+        const newGroup = {
+            id: Date.now(),
+            name: name,
+            messages: []
+        };
+
+        groups.push(newGroup);
+        save();
+        input.value = '';
+        renderGroups();
+        alert("Гільдію '" + name + "' успішно створено!");
+    }
+
+    function renderGroups() {
+        const list = document.getElementById('groupsList');
+        if (!list) return;
+        
+        list.innerHTML = '';
+        groups.forEach(g => {
+            const div = document.createElement('div');
+            div.className = 'group-item';
+            div.innerHTML = `<strong># ${g.name}</strong>`;
+            div.onclick = () => alert("Ви обрали чат: " + g.name);
+            list.appendChild(div);
+        });
+    }
+
+    // Запускаємо першу відрисовку
+    renderGroups();
+</script>
