@@ -1,58 +1,84 @@
 <!DOCTYPE html>
-<html>
+<html lang="uk">
 <head>
+    <meta charset="UTF-8">
     <title>Games hub</title>
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
-        .group-card { border: 1px solid #444; padding: 15px; margin: 10px 0; border-radius: 8px; }
-        input, textarea { display: block; margin-bottom: 10px; width: 100%; max-width: 300px; }
-        button { background: #b38d1d; border: none; padding: 10px 20px; cursor: pointer; color: white; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; padding: 20px; line-height: 1.6; }
+        .group-card { border: 1px solid #444; padding: 15px; margin: 15px 0; border-radius: 8px; background: #252525; transition: transform 0.2s; }
+        .group-card:hover { border-color: #b38d1d; transform: translateY(-2px); }
+        input, textarea { display: block; margin-bottom: 10px; width: 100%; max-width: 400px; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #333; color: white; }
+        button { background: #b38d1d; border: none; padding: 10px 20px; cursor: pointer; color: white; font-weight: bold; border-radius: 4px; }
+        button:hover { background: #d4a724; }
+        hr { border: 0; border-top: 1px solid #444; margin: 20px 0; }
     </style>
 </head>
 <body>
 
-    <h1>Спільноти Яртала(Створено Яриком Пашком Васильовичом)</h1>
+    <h1>Спільноти Яртала</h1>
+    <p><small>Створено Яриком Пашком Васильовичом</small></p>
 
     <div id="create-group">
         <h3>Створити свою Спільноту</h3>
         <input type="text" id="groupName" placeholder="Назва групи (напр. Гільдія Магів)">
-        <textarea id="groupDesc" placeholder="Опис групи"></textarea>
+        <textarea id="groupDesc" placeholder="Опис групи" rows="4"></textarea>
         <button onclick="createGroup()">Створити</button>
     </div>
 
     <hr>
 
+    <h2>Список спільнот</h2>
     <div id="groupsList"></div>
 
     <script>
         // Завантаження груп з сервера
         async function loadGroups() {
-            const response = await fetch('/api/groups');
-            const groups = await response.json();
-            const list = document.getElementById('groupsList');
-            list.innerHTML = '';
-            groups.forEach(g => {
-                list.innerHTML += 
-                    <div class="group-card">
-                        <h3>${g.name}</h3>
-                        <p>${g.description}</p>
-                    </div>
-                ;
-            });
+            try {
+                const response = await fetch('/api/groups');
+                const groups = await response.json();
+                const list = document.getElementById('groupsList');
+                list.innerHTML = '';
+                
+                groups.forEach(g => {
+                    // ВИПРАВЛЕНО: Використовуємо зворотні апострофи для шаблонних рядків
+                    list.innerHTML += `
+                        <div class="group-card">
+                            <h3>${g.name}</h3>
+                            <p>${g.description}</p>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error("Помилка завантаження:", error);
+                document.getElementById('groupsList').innerHTML = '<p style="color: #ff6b6b;">Не вдалося завантажити список груп. Перевірте роботу сервера.</p>';
+            }
         }
 
         // Надсилання нової групи
         async function createGroup() {
-            const name = document.getElementById('groupName').value;
-            const description = document.getElementById('groupDesc').value;
+            const nameInput = document.getElementById('groupName');
+            const descInput = document.getElementById('groupDesc');
 
-            await fetch('/api/groups', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, description })
-            });
+            if (!nameInput.value || !descInput.value) {
+                alert("Будь ласка, заповніть всі поля!");
+                return;
+            }
 
-            loadGroups(); // Оновити список
+            try {
+                await fetch('/api/groups', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: nameInput.value, description: descInput.value })
+                });
+
+                // Очищення полів після створення
+                nameInput.value = '';
+                descInput.value = '';
+                
+                loadGroups(); // Оновити список
+            } catch (error) {
+                alert("Помилка при створенні групи");
+            }
         }
 
         loadGroups(); // Викликати при старті
