@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yartal Hub | Спільноти</title>
+    <title>Yartal Hub | Спільноти та Пошук</title>
     <style>
         :root {
             --primary: #b38d1d;
             --primary-hover: #d4a724;
             --bg-dark: #0f0f0f;
-            --card-bg: #1e1e1e;
+            --sidebar-bg: #151515;
             --text-main: #e0e0e0;
             --accent: #00ff88;
         }
 
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-main);
             margin: 0;
@@ -24,26 +24,17 @@
             overflow: hidden;
         }
 
-        /* --- СТРУКТУРА --- */
+        /* --- SIDEBAR --- */
         .sidebar {
             width: 320px;
-            background: #151515;
+            background: var(--sidebar-bg);
             display: flex;
             flex-direction: column;
             border-right: 1px solid #282828;
         }
 
-        .main-chat {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            background: radial-gradient(circle at top right, #1a1a1a, #0f0f0f);
-        }
-
-        /* --- БОКОВА ПАНЕЛЬ --- */
         .sidebar-header {
             padding: 20px;
-            background: linear-gradient(to bottom, #1a1a1a, #151515);
             border-bottom: 1px solid #282828;
         }
 
@@ -52,7 +43,28 @@
             margin: 0;
             color: var(--primary);
             text-transform: uppercase;
-            letter-spacing: 1px;
+        }
+
+        /* Поле пошуку */
+        .search-box {
+            padding: 10px 15px;
+            background: #1a1a1a;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px;
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 20px;
+            color: white;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+            outline: none;
         }
 
         .create-box {
@@ -60,6 +72,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            border-bottom: 1px solid #282828;
         }
 
         input, textarea {
@@ -68,11 +81,7 @@
             color: white;
             padding: 10px;
             border-radius: 8px;
-            outline: none;
-            transition: border 0.3s;
         }
-
-        input:focus { border-color: var(--primary); }
 
         .btn-create {
             background: var(--primary);
@@ -82,10 +91,8 @@
             padding: 10px;
             border-radius: 8px;
             cursor: pointer;
-            transition: 0.3s;
+            transition: 0.2s;
         }
-
-        .btn-create:hover { background: var(--primary-hover); transform: translateY(-1px); }
 
         #groupsList {
             flex-grow: 1;
@@ -95,28 +102,26 @@
 
         .group-item {
             padding: 12px;
-            margin-bottom: 8px;
-            border-radius: 10px;
+            margin-bottom: 5px;
+            border-radius: 8px;
             cursor: pointer;
             transition: 0.2s;
-            border-left: 3px solid transparent;
         }
 
         .group-item:hover { background: #252525; }
-        .group-item.active {
-            background: #2d2d2d;
-            border-left-color: var(--primary);
+        .group-item.active { background: #2d2d2d; border-left: 3px solid var(--primary); }
+
+        /* --- CHAT --- */
+        .main-chat {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* --- ЧАТ --- */
         .chat-header {
             padding: 15px 25px;
-            background: rgba(20, 20, 20, 0.8);
-            backdrop-filter: blur(10px);
+            background: #111;
             border-bottom: 1px solid #282828;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
         }
 
         #messagesBox {
@@ -125,22 +130,18 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
 
         .msg {
             max-width: 70%;
             padding: 10px 15px;
-            border-radius: 15px;
+            border-radius: 12px;
             font-size: 0.95rem;
-            position: relative;
-            animation: slideIn 0.3s ease;
         }
 
-        .msg-received { background: #2a2a2a; align-self: flex-start; border-bottom-left-radius: 2px; }
-        .msg-sent { background: var(--primary); color: black; align-self: flex-end; border-bottom-right-radius: 2px; }
-
-        .msg-time { font-size: 0.7rem; opacity: 0.6; margin-top: 5px; text-align: right; }
+        .msg-sent { background: var(--primary); color: black; align-self: flex-end; }
+        .msg-received { background: #2a2a2a; align-self: flex-start; }
 
         .input-area {
             padding: 20px;
@@ -149,22 +150,7 @@
             gap: 10px;
         }
 
-        .input-area input { flex-grow: 1; margin-bottom: 0; }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Порожній стан */
-        .welcome-screen {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            opacity: 0.3;
-        }
+        .input-area input { flex-grow: 1; }
     </style>
 </head>
 <body>
@@ -172,41 +158,41 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <h1>Yartal Hub</h1>
-            <small>by Yarik Pashko</small>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Пошук гільдії..." oninput="filterGroups()">
         </div>
         
         <div class="create-box">
-            <input type="text" id="groupName" placeholder="Назва спільноти...">
-            <button class="btn-create" onclick="createGroup()">+ Нова група</button>
+            <input type="text" id="groupName" placeholder="Назва нової групи...">
+            <button class="btn-create" onclick="createGroup()">+ Створити</button>
         </div>
 
         <div id="groupsList"></div>
     </div>
 
-    <div class="main-chat" id="mainChat">
-        <div id="welcomeScreen" class="welcome-screen">
-            <h2>Оберіть гільдію для спілкування</h2>
+    <div class="main-chat">
+        <div id="welcomeScreen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; opacity: 0.3;">
+            <h2>Виберіть гільдію для входу в чат</h2>
         </div>
 
         <div id="chatContent" style="display: none; flex-direction: column; height: 100%;">
             <div class="chat-header">
                 <h2 id="currentGroupName" style="margin:0">Назва</h2>
-                <span id="memberCount" style="color: var(--accent); font-size: 0.8rem;">● Online</span>
             </div>
-            
             <div id="messagesBox"></div>
-
             <div class="input-area">
-                <input type="text" id="msgInput" placeholder="Напишіть повідомлення..." onkeypress="checkEnter(event)">
-                <button class="btn-create" style="width: auto; padding: 10px 20px;" onclick="sendMsg()">Відправити</button>
+                <input type="text" id="msgInput" placeholder="Ваше повідомлення..." onkeypress="if(event.key==='Enter') sendMsg()">
+                <button class="btn-create" onclick="sendMsg()">></button>
             </div>
         </div>
     </div>
 
     <script>
-        // Завантаження даних з пам'яті браузера (LocalStorage)
         let groups = JSON.parse(localStorage.getItem('yartal_groups')) || [];
         let activeId = null;
+        let searchTerm = ""; // Змінна для фільтрації
 
         function save() {
             localStorage.setItem('yartal_groups', JSON.stringify(groups));
@@ -215,23 +201,27 @@
         function createGroup() {
             const name = document.getElementById('groupName').value.trim();
             if (!name) return;
-
-            const newGroup = {
-                id: Date.now(),
-                name: name,
-                messages: []
-            };
-
+            const newGroup = { id: Date.now(), name: name, messages: [] };
             groups.push(newGroup);
             document.getElementById('groupName').value = '';
             save();
             renderGroups();
         }
 
+        // Функція для фільтрації (оновлюється при кожному натисканні клавіші)
+        function filterGroups() {
+            searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            renderGroups();
+        }
+
         function renderGroups() {
             const list = document.getElementById('groupsList');
             list.innerHTML = '';
-            groups.forEach(g => {
+            
+            // Фільтруємо масив перед відображенням
+            const filtered = groups.filter(g => g.name.toLowerCase().includes(searchTerm));
+
+            filtered.forEach(g => {
                 const div = document.createElement('div');
                 div.className = `group-item ${g.id === activeId ? 'active' : ''}`;
                 div.innerHTML = `<strong># ${g.name}</strong>`;
@@ -243,54 +233,11 @@
         function openChat(id) {
             activeId = id;
             const group = groups.find(g => g.id === id);
-            
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('chatContent').style.display = 'flex';
             document.getElementById('currentGroupName').innerText = group.name;
-            
             renderGroups();
             renderMessages();
         }
 
-        function sendMsg() {
-            const input = document.getElementById('msgInput');
-            const text = input.value.trim();
-            if (!text || !activeId) return;
-
-            const group = groups.find(g => g.id === activeId);
-            group.messages.push({
-                text: text,
-                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                isMe: true
-            });
-
-            input.value = '';
-            save();
-            renderMessages();
-        }
-
-        function renderMessages() {
-            const box = document.getElementById('messagesBox');
-            const group = groups.find(g => g.id === activeId);
-            box.innerHTML = '';
-
-            group.messages.forEach(m => {
-                box.innerHTML += `
-                    <div class="msg ${m.isMe ? 'msg-sent' : 'msg-received'}">
-                        ${m.text}
-                        <div class="msg-time">${m.time}</div>
-                    </div>
-                `;
-            });
-            box.scrollTop = box.scrollHeight;
-        }
-
-        function checkEnter(e) {
-            if (e.key === 'Enter') sendMsg();
-        }
-
-        // Ініціалізація
-        renderGroups();
-    </script>
-</body>
-</html>
+        function sendMsg
