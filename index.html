@@ -2,86 +2,114 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Games hub</title>
+    <title>Games Hub - Спільноти Яртала</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; padding: 20px; line-height: 1.6; }
-        .group-card { border: 1px solid #444; padding: 15px; margin: 15px 0; border-radius: 8px; background: #252525; transition: transform 0.2s; }
-        .group-card:hover { border-color: #b38d1d; transform: translateY(-2px); }
-        input, textarea { display: block; margin-bottom: 10px; width: 100%; max-width: 400px; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #333; color: white; }
-        button { background: #b38d1d; border: none; padding: 10px 20px; cursor: pointer; color: white; font-weight: bold; border-radius: 4px; }
-        button:hover { background: #d4a724; }
-        hr { border: 0; border-top: 1px solid #444; margin: 20px 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        #app-container { width: 100%; max-width: 600px; }
+        
+        .create-form { background: #252525; padding: 20px; border-radius: 12px; border: 1px dashed #b38d1d; margin-bottom: 30px; }
+        
+        input, textarea { 
+            display: block; width: 100%; margin-bottom: 15px; padding: 12px; 
+            background: #333; border: 1px solid #444; color: white; border-radius: 6px; box-sizing: border-box;
+        }
+        
+        button { 
+            background: #b38d1d; border: none; padding: 12px 25px; cursor: pointer; 
+            color: white; font-weight: bold; border-radius: 6px; width: 100%; transition: 0.3s;
+        }
+        button:hover { background: #d4a724; transform: scale(1.02); }
+
+        .group-card { 
+            background: #2a2a2a; border-left: 5px solid #b38d1d; padding: 15px; 
+            margin: 15px 0; border-radius: 4px; animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .empty-msg { color: #666; text-align: center; font-style: italic; }
     </style>
 </head>
 <body>
 
-    <h1>Спільноти Яртала</h1>
-    <p><small>Створено Яриком Пашком Васильовичом</small></p>
+    <div id="app-container">
+        <h1>Спільноти Яртала</h1>
+        <p style="color: #b38d1d;">Автор: Ярик Пашко Васильович</p>
 
-    <div id="create-group">
-        <h3>Створити свою Спільноту</h3>
-        <input type="text" id="groupName" placeholder="Назва групи (напр. Гільдія Магів)">
-        <textarea id="groupDesc" placeholder="Опис групи" rows="4"></textarea>
-        <button onclick="createGroup()">Створити</button>
+        <div class="create-form">
+            <h3>Крок 1: Введіть назву</h3>
+            <input type="text" id="groupName" placeholder="Наприклад: Гільдія Мисливців">
+            
+            <h3>Крок 2: Опишіть вашу групу</h3>
+            <textarea id="groupDesc" placeholder="Чим ви займаєтесь?" rows="3"></textarea>
+            
+            <h3>Крок 3: Створіть магію</h3>
+            <button onclick="addNewGroup()">Додати спільноту до списку</button>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #444; margin: 40px 0;">
+
+        <h2>Активні спільноти</h2>
+        <div id="groupsList">
+            <p class="empty-msg">Тут поки порожньо. Будь першим, хто створить групу!</p>
+        </div>
     </div>
 
-    <hr>
-
-    <h2>Список спільнот</h2>
-    <div id="groupsList"></div>
-
     <script>
-        // Завантаження груп з сервера
-        async function loadGroups() {
-            try {
-                const response = await fetch('/api/groups');
-                const groups = await response.json();
-                const list = document.getElementById('groupsList');
-                list.innerHTML = '';
-                
-                groups.forEach(g => {
-                    // ВИПРАВЛЕНО: Використовуємо зворотні апострофи для шаблонних рядків
-                    list.innerHTML += `
-                        <div class="group-card">
-                            <h3>${g.name}</h3>
-                            <p>${g.description}</p>
-                        </div>
-                    `;
-                });
-            } catch (error) {
-                console.error("Помилка завантаження:", error);
-                document.getElementById('groupsList').innerHTML = '<p style="color: #ff6b6b;">Не вдалося завантажити список груп. Перевірте роботу сервера.</p>';
-            }
-        }
+        // Масив, де зберігаються групи "в пам'яті" браузера
+        let groups = [];
 
-        // Надсилання нової групи
-        async function createGroup() {
-            const nameInput = document.getElementById('groupName');
-            const descInput = document.getElementById('groupDesc');
-
-            if (!nameInput.value || !descInput.value) {
-                alert("Будь ласка, заповніть всі поля!");
+        function renderGroups() {
+            const list = document.getElementById('groupsList');
+            
+            if (groups.length === 0) {
+                list.innerHTML = '<p class="empty-msg">Тут поки порожньо. Будь першим, хто створить групу!</p>';
                 return;
             }
 
-            try {
-                await fetch('/api/groups', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: nameInput.value, description: descInput.value })
-                });
-
-                // Очищення полів після створення
-                nameInput.value = '';
-                descInput.value = '';
-                
-                loadGroups(); // Оновити список
-            } catch (error) {
-                alert("Помилка при створенні групи");
-            }
+            list.innerHTML = ''; // Очищаємо список перед оновленням
+            
+            // Проходимо по масиву в зворотному порядку (нові зверху)
+            groups.slice().reverse().forEach(g => {
+                list.innerHTML += `
+                    <div class="group-card">
+                        <h3 style="margin-top: 0; color: #b38d1d;">${g.name}</h3>
+                        <p style="margin-bottom: 0;">${g.description}</p>
+                    </div>
+                `;
+            });
         }
 
-        loadGroups(); // Викликати при старті
+        function addNewGroup() {
+            const name = document.getElementById('groupName').value.trim();
+            const desc = document.getElementById('groupDesc').value.trim();
+
+            // Перевірка, чи не порожні поля
+            if (name === "" || desc === "") {
+                alert("Ей, заповни всі поля! Гільдія не може бути без назви.");
+                return;
+            }
+
+            // Додаємо новий об'єкт у наш список
+            const newGroup = {
+                name: name,
+                description: desc
+            };
+
+            groups.push(newGroup);
+
+            // Очищуємо поля введення
+            document.getElementById('groupName').value = '';
+            document.getElementById('groupDesc').value = '';
+
+            // Оновлюємо відображення на екрані
+            renderGroups();
+            
+            console.log("Додано нову групу:", name);
+        }
     </script>
 </body>
 </html>
