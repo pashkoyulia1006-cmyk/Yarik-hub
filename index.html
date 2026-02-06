@@ -2,155 +2,250 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Yartal Hub | Робоча версія</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yartal Hub | Офіційна версія</title>
     <style>
-        :root { --gold: #b38d1d; --dark: #121212; --card: #1e1e1e; --text: #e0e0e0; }
-        body { font-family: sans-serif; background: var(--dark); color: var(--text); margin: 0; display: flex; height: 100vh; }
-        
-        /* Бокова панель */
-        .sidebar { width: 300px; background: #181818; border-right: 1px solid #333; display: flex; flex-direction: column; }
-        .p-3 { padding: 15px; }
-        .header { color: var(--gold); text-align: center; border-bottom: 1px solid #333; }
-        
-        /* Поля вводу та кнопки */
-        input { width: 100%; padding: 10px; margin-bottom: 10px; background: #252525; border: 1px solid #444; color: white; border-radius: 5px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 10px; background: var(--gold); border: none; color: black; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        :root {
+            --primary: #b38d1d;
+            --bg: #0f0f0f;
+            --sidebar: #151515;
+            --text: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- ЛІВА ПАНЕЛЬ --- */
+        .sidebar {
+            width: 300px;
+            background: var(--sidebar);
+            border-right: 1px solid #282828;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #282828;
+        }
+
+        .sidebar-header h1 {
+            color: var(--primary);
+            font-size: 1.2rem;
+            margin: 0;
+            letter-spacing: 2px;
+        }
+
+        .create-area {
+            padding: 15px;
+            border-bottom: 1px solid #282828;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            background: #222;
+            border: 1px solid #333;
+            color: white;
+            border-radius: 5px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            background: var(--primary);
+            border: none;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.2s;
+        }
+
         .btn:hover { background: #d4a724; }
 
-        /* Список груп */
-        #groupsList { flex-grow: 1; overflow-y: auto; padding: 10px; }
-        .group-item { padding: 15px; background: var(--card); margin-bottom: 8px; border-radius: 5px; cursor: pointer; border-left: 3px solid transparent; transition: 0.3s; }
-        .group-item:hover { background: #2a2a2a; }
-        .group-item.active { border-left-color: var(--gold); background: #2a2a2a; }
+        #groupsList {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
 
-        /* Чат */
-        .chat-area { flex-grow: 1; display: flex; flex-direction: column; }
-        #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px 15px; border-radius: 10px; max-width: 70%; word-wrap: break-word; }
-        .sent { background: var(--gold); color: black; align-self: flex-end; }
-        .empty-state { margin: auto; opacity: 0.3; text-align: center; }
+        .group-item {
+            padding: 12px;
+            background: #1e1e1e;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .group-item:hover { background: #252525; }
+        .group-item.active { border-left-color: var(--primary); background: #252525; }
+
+        .del-btn { color: #666; cursor: pointer; padding: 0 5px; }
+        .del-btn:hover { color: #ff4444; }
+
+        /* --- ЗОНА ЧАТУ --- */
+        .chat-main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chatHeader {
+            padding: 15px 25px;
+            background: #111;
+            border-bottom: 1px solid #282828;
+            font-weight: bold;
+        }
+
+        #messagesBox {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 10px;
+            background: #2a2a2a;
+            align-self: flex-start;
+        }
+
+        .message.mine {
+            background: var(--primary);
+            color: black;
+            align-self: flex-end;
+        }
+
+        .input-box {
+            padding: 20px;
+            background: #151515;
+            display: flex;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="header p-3"><h2>YARTAL HUB</h2></div>
+        <div class="sidebar-header">
+            <h1>YARTAL HUB</h1>
+        </div>
         
-        <div class="p-3">
-            <input type="text" id="newGroupName" placeholder="Назва гільдії...">
-            <button class="btn" onclick="addGroup()">Створити гільдію</button>
+        <div class="create-area">
+            <input type="text" id="groupInput" placeholder="Назва гільдії...">
+            <button class="btn" id="createBtn">СТВОРИТИ</button>
         </div>
 
-        <div id="groupsList">
-            </div>
+        <div id="groupsList"></div>
     </div>
 
-    <div class="chat-area">
-        <div id="messages">
-            <div class="empty-state"><h3>Оберіть гільдію зліва</h3></div>
-        </div>
+    <div class="chat-main">
+        <div id="chatHeader">Оберіть гільдію</div>
+        <div id="messagesBox"></div>
         
-        <div class="p-3" id="inputSection" style="display: none; background: #181818;">
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="messageText" placeholder="Напишіть повідомлення..." style="margin:0;">
-                <button class="btn" onclick="sendMessage()" style="width: 100px;">></button>
-            </div>
+        <div class="input-box" id="msgArea" style="display: none;">
+            <input type="text" id="msgInput" placeholder="Повідомлення..." style="margin:0;">
+            <button class="btn" id="sendBtn" style="width: 80px;">></button>
         </div>
     </div>
 
     <script>
-        // Головні дані
-        let data = JSON.parse(localStorage.getItem('yartal_db')) || [];
-        let currentId = null;
+        // --- ДАНІ ---
+        let groups = JSON.parse(localStorage.getItem('yartal_save')) || [];
+        let activeId = null;
 
-        // Функція відображення списку груп
+        // --- ЕЛЕМЕНТИ ---
+        const groupInput = document.getElementById('groupInput');
+        const createBtn = document.getElementById('createBtn');
+        const groupsList = document.getElementById('groupsList');
+        const messagesBox = document.getElementById('messagesBox');
+        const chatHeader = document.getElementById('chatHeader');
+        const msgArea = document.getElementById('msgArea');
+        const msgInput = document.getElementById('msgInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        // --- ФУНКЦІЇ ---
+
+        function save() {
+            localStorage.setItem('yartal_save', JSON.stringify(groups));
+        }
+
         function renderGroups() {
-            const list = document.getElementById('groupsList');
-            list.innerHTML = '';
-            
-            data.forEach(group => {
+            groupsList.innerHTML = '';
+            groups.forEach(g => {
                 const div = document.createElement('div');
-                div.className = 'group-item' + (group.id === currentId ? ' active' : '');
-                div.innerHTML = `<strong># ${group.name}</strong>`;
-                div.onclick = () => selectGroup(group.id);
-                list.appendChild(div);
+                div.className = 'group-item' + (g.id === activeId ? ' active' : '');
+                div.innerHTML = `<span># ${g.name}</span> <span class="del-btn" onclick="deleteGroup(event, ${g.id})">×</span>`;
+                div.onclick = () => openChat(g.id);
+                groupsList.appendChild(div);
             });
         }
 
-        // Додавання нової групи
-        function addGroup() {
-            const input = document.getElementById('newGroupName');
-            const name = input.value.trim();
-            
-            if (name === "") {
+        function openChat(id) {
+            activeId = id;
+            const group = groups.find(g => g.id === id);
+            chatHeader.innerText = "# " + group.name;
+            msgArea.style.display = 'flex';
+            renderMessages();
+            renderGroups();
+        }
+
+        function renderMessages() {
+            messagesBox.innerHTML = '';
+            const group = groups.find(g => g.id === activeId);
+            if (!group) return;
+
+            group.messages.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'message mine';
+                div.innerText = m;
+                messagesBox.appendChild(div);
+            });
+            messagesBox.scrollTop = messagesBox.scrollHeight;
+        }
+
+        function deleteGroup(e, id) {
+            e.stopPropagation();
+            groups = groups.filter(g => g.id !== id);
+            if (activeId === id) {
+                activeId = null;
+                msgArea.style.display = 'none';
+                chatHeader.innerText = "Оберіть гільдію";
+                messagesBox.innerHTML = '';
+            }
+            save();
+            renderGroups();
+        }
+
+        // --- ПОДІЇ ---
+
+        // Кнопка створення
+        createBtn.addEventListener('click', () => {
+            const name = groupInput.value.trim();
+            if (!name) {
                 alert("Введіть назву!");
                 return;
             }
-
-            const newGroup = {
-                id: Date.now(),
-                name: name,
-                messages: []
-            };
-
-            data.push(newGroup);
-            localStorage.setItem('yartal_db', JSON.stringify(data)); // Зберігаємо
-            input.value = '';
+            const newGroup = { id: Date.now(), name: name, messages: [] };
+            groups.push(newGroup);
+            save();
+            groupInput.value = '';
             renderGroups();
-        }
-
-        // Вибір групи для чату
-        function selectGroup(id) {
-            currentId = id;
-            document.getElementById('inputSection').style.display = 'block';
-            renderGroups();
-            renderMessages();
-        }
-
-        // Надсилання повідомлення
-        function sendMessage() {
-            const input = document.getElementById('messageText');
-            const text = input.value.trim();
-            
-            if (text === "" || currentId === null) return;
-
-            const group = data.find(g => g.id === currentId);
-            group.messages.push(text);
-            
-            localStorage.setItem('yartal_db', JSON.stringify(data)); // Зберігаємо
-            input.value = '';
-            renderMessages();
-        }
-
-        // Відображення повідомлень
-        function renderMessages() {
-            const container = document.getElementById('messages');
-            container.innerHTML = '';
-            
-            const group = data.find(g => g.id === currentId);
-            
-            if (group.messages.length === 0) {
-                container.innerHTML = '<div class="empty-state">Повідомлень ще немає</div>';
-            }
-
-            group.messages.forEach(msg => {
-                const div = document.createElement('div');
-                div.className = 'msg sent';
-                div.innerText = msg;
-                container.appendChild(div);
-            });
-
-            container.scrollTop = container.scrollHeight; // Прокрутка вниз
-        }
-
-        // Підтримка клавіші Enter
-        document.getElementById('messageText').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') sendMessage();
-        });
-
-        // Завантаження при старті
-        renderGroups();
-    </script>
-
-</body>
-</html>
