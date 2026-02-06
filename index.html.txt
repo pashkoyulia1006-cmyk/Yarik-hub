@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Games hub</title>
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: white; padding: 20px; }
+        .group-card { border: 1px solid #444; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        input, textarea { display: block; margin-bottom: 10px; width: 100%; max-width: 300px; }
+        button { background: #b38d1d; border: none; padding: 10px 20px; cursor: pointer; color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>Спільноти Яртала(Створено Яриком Пашком Васильовичом)</h1>
+
+    <div id="create-group">
+        <h3>Створити свою Спільноту</h3>
+        <input type="text" id="groupName" placeholder="Назва групи (напр. Гільдія Магів)">
+        <textarea id="groupDesc" placeholder="Опис групи"></textarea>
+        <button onclick="createGroup()">Створити</button>
+    </div>
+
+    <hr>
+
+    <div id="groupsList"></div>
+
+    <script>
+        // Завантаження груп з сервера
+        async function loadGroups() {
+            const response = await fetch('/api/groups');
+            const groups = await response.json();
+            const list = document.getElementById('groupsList');
+            list.innerHTML = '';
+            groups.forEach(g => {
+                list.innerHTML += 
+                    <div class="group-card">
+                        <h3>${g.name}</h3>
+                        <p>${g.description}</p>
+                    </div>
+                ;
+            });
+        }
+
+        // Надсилання нової групи
+        async function createGroup() {
+            const name = document.getElementById('groupName').value;
+            const description = document.getElementById('groupDesc').value;
+
+            await fetch('/api/groups', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, description })
+            });
+
+            loadGroups(); // Оновити список
+        }
+
+        loadGroups(); // Викликати при старті
+    </script>
+</body>
+</html>
