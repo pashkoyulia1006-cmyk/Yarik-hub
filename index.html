@@ -34,6 +34,7 @@
             border-right: 1px solid #282828;
             display: flex;
             flex-direction: column;
+            flex-shrink: 0;
         }
 
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #282828; }
@@ -68,7 +69,7 @@
         body.is-admin .del-btn { display: block; }
 
         /* --- ЧАТ --- */
-        .chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+        .chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; min-width: 0; }
         #chatHeader {
             padding: 15px 25px; background: #111; border-bottom: 1px solid #282828;
             display: flex; justify-content: space-between; align-items: center;
@@ -79,6 +80,19 @@
         .message.mine { background: var(--primary); color: black; align-self: flex-end; }
 
         .input-box { padding: 20px; background: #151515; display: flex; gap: 10px; }
+
+        /* --- АДАПТАЦІЯ ДЛЯ ТЕЛЕФОНІВ --- */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { 
+                width: 100%; 
+                height: 35%; /* Список гільдій займає третину екрану */
+                border-right: none; 
+                border-bottom: 1px solid #282828; 
+            }
+            .chat-main { height: 65%; }
+            .message { max-width: 85%; }
+        }
     </style>
 </head>
 <body id="mainBody">
@@ -110,27 +124,25 @@
     </div>
 
     <script>
-        // --- КОНФІГУРАЦІЯ FIREBASE (Встав сюди свої дані) ---
+        // --- КОНФІГУРАЦІЯ FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyCLNQ8OJlcqHlpo-LRR_YmLzxdN8-pw_BY",
             authDomain: "yarthal-hub.firebaseapp.com",
-            databaseURL: "https://yarthal-hub-default-rtdb.firebaseio.com", // Наприклад: https://myproject-default-rtdb.firebaseio.com/
+            databaseURL: "https://yarthal-hub-default-rtdb.firebaseio.com",
             projectId: "yarthal-hub",
             storageBucket: "yarthal-hub.firebasestorage.app",
             messagingSenderId: "937423034757",
-            appId: "1:937423034757:web:621d82cebac0ca380a8cec"
-             measurementId: "G-HQGJX0PQ3C"
+            appId: "1:937423034757:web:621d82cebac0ca380a8cec",
+            measurementId: "G-HQGJX0PQ3C"
         };
 
-        // Ініціалізація Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // --- ЛОГІКА САЙТУ ---
         let groups = [];
         let activeId = null;
         let isAdmin = false;
-        const ADMIN_PASS = "admin123"; // Твій пароль адміна
+        const ADMIN_PASS = "admin123"; 
 
         const elements = {
             searchInput: document.getElementById('searchInput'),
@@ -143,12 +155,11 @@
             msgInput: document.getElementById('msgInput')
         };
 
-        // Збереження в хмару
         function saveToCloud() {
             db.ref('groups').set(groups);
         }
 
-        // Отримання даних з хмари в реальному часі
+        // Слухаємо базу в реальному часі - дані не пропадуть після оновлення!
         db.ref('groups').on('value', (snapshot) => {
             const data = snapshot.val();
             groups = data || [];
@@ -195,7 +206,6 @@
             elements.messagesBox.scrollTop = elements.messagesBox.scrollHeight;
         }
 
-        // Створення гільдії
         document.getElementById('createBtn').onclick = () => {
             const name = document.getElementById('groupInput').value.trim();
             if (name) {
@@ -206,7 +216,6 @@
             }
         };
 
-        // Відправка повідомлення
         function sendMessage() {
             const text = elements.msgInput.value.trim();
             if (text && activeId) {
@@ -227,11 +236,10 @@
         document.getElementById('sendBtn').onclick = sendMessage;
         elements.msgInput.onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
 
-        // Видалення (тільки для адміна)
         function deleteGroup(event, id) {
             event.stopPropagation();
             if (!isAdmin) return;
-            if (confirm("Видалити цю гільдію для ВСІХ користувачів?")) {
+            if (confirm("Видалити цю гільдію для всіх?")) {
                 groups = groups.filter(g => g.id !== id);
                 if (activeId === id) {
                     activeId = null;
@@ -242,7 +250,6 @@
             }
         }
 
-        // Пошук та логін адміна
         elements.searchInput.oninput = (e) => {
             if (e.target.value === ADMIN_PASS) {
                 isAdmin = true;
