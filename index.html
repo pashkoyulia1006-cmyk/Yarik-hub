@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yartal Hub </title>
+    <title>Yartal Hub | Global Edition</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
     <style>
         :root {
             --primary: #b38d1d;
@@ -23,7 +27,6 @@
             overflow: hidden;
         }
 
-        /* --- SIDEBAR --- */
         .sidebar {
             width: 300px;
             background: var(--sidebar);
@@ -33,7 +36,7 @@
         }
 
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #282828; }
-        .sidebar-header h1 { color: var(--primary); font-size: 1.2rem; margin: 0; letter-spacing: 2px; }
+        .sidebar-header h1 { color: var(--primary); font-size: 0.9rem; margin: 0; letter-spacing: 1px; line-height: 1.4; }
 
         .admin-status { font-size: 10px; color: #555; text-transform: uppercase; margin-top: 5px; }
         .admin-status.active { color: var(--primary); font-weight: bold; }
@@ -59,25 +62,19 @@
         .group-item:hover { background: #252525; }
         .group-item.active { border-left-color: var(--primary); background: #252525; }
 
-        /* Кнопка видалення (прихована за замовчуванням) */
-        .del-btn { 
-            color: #555; display: none; font-weight: bold; padding: 0 5px; 
-        }
+        .del-btn { color: #555; display: none; font-weight: bold; padding: 0 5px; }
         .del-btn:hover { color: var(--danger); }
-        
-        /* Клас, який покаже кнопки, якщо ти адмін */
         body.is-admin .del-btn { display: block; }
 
-        /* --- CHAT --- */
         .chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
         #chatHeader {
             padding: 15px 25px; background: #111; border-bottom: 1px solid #282828;
             display: flex; justify-content: space-between; align-items: center;
         }
-        .call-btn { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
 
         #messagesBox { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .message.mine { background: var(--primary); color: black; align-self: flex-end; padding: 10px; border-radius: 10px; max-width: 70%; }
+        .message { background: #222; color: white; align-self: flex-start; padding: 10px; border-radius: 10px; max-width: 70%; word-wrap: break-word; }
+        .message.mine { background: var(--primary); color: black; align-self: flex-end; }
 
         .input-box { padding: 20px; background: #151515; display: flex; gap: 10px; }
     </style>
@@ -86,7 +83,7 @@
 
     <div class="sidebar">
         <div class="sidebar-header">
-            <h1>YARTAL HUB(Створено Ярославом Пашком Васильовичом)</h1>
+            <h1>YARTAL HUB<br><span style="font-size: 0.7rem; color: #777;">Створено Ярославом Пашком</span></h1>
             <div id="adminStatus" class="admin-status">Гість</div>
         </div>
         <div class="create-area">
@@ -102,7 +99,6 @@
     <div class="chat-main">
         <div id="chatHeader">
             <span id="headerTitle">Оберіть гільдію</span>
-            <button id="startCall" class="call-btn" style="display: none;">ВІДЕОДЗВІНОК</button>
         </div>
         <div id="messagesBox"></div>
         <div class="input-box" id="msgArea" style="display: none;">
@@ -112,11 +108,22 @@
     </div>
 
     <script>
-        let groups = JSON.parse(localStorage.getItem('yartal_save')) || [];
+        // --- НАЛАШТУВАННЯ FIREBASE ---
+        // УВАГА: Заміни ці дані на свої з консолі Firebase, щоб база працювала вічно.
+        // Поки що стоїть демо-конфігурація (вона може мати ліміти).
+        const firebaseConfig = {
+            apiKey: "AIzaSyAs-DEMO-ONLY",
+            databaseURL: "https://yartal-hub-default-rtdb.firebaseio.com", 
+            projectId: "yartal-hub"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // --- ДАНІ ---
+        let groups = [];
         let activeId = null;
         let isAdmin = false;
-        
-        // --- Твій секретний пароль ---
         const ADMIN_PASS = "admin123"; 
 
         const elements = {
@@ -127,54 +134,36 @@
             messagesBox: document.getElementById('messagesBox'),
             headerTitle: document.getElementById('headerTitle'),
             msgArea: document.getElementById('msgArea'),
-            startCall: document.getElementById('startCall')
+            msgInput: document.getElementById('msgInput')
         };
 
-        function save() { localStorage.setItem('yartal_save', JSON.stringify(groups)); }
+        // --- СИНХРОНІЗАЦІЯ З ХМАРОЮ ---
+        function saveToCloud() {
+            db.ref('groups').set(groups);
+        }
+
+        // Слухаємо базу даних у реальному часі
+        db.ref('groups').on('value', (snapshot) => {
+            const data = snapshot.val();
+            groups = data || [];
+            renderGroups(elements.searchInput.value);
+            if (activeId) renderMessages();
+        });
 
         function renderGroups(filter = "") {
             elements.groupsList.innerHTML = '';
-            groups.filter(g => g.name.toLowerCase().includes(filter.toLowerCase())).forEach(g => {
-                const div = document.createElement('div');
-                div.className = 'group-item' + (g.id === activeId ? ' active' : '');
-                div.innerHTML = `
-                    <span># ${g.name}</span>
-                    <span class="del-btn" onclick="deleteGroup(event, ${g.id})">×</span>
-                `;
-                div.onclick = () => openChat(g.id);
-                elements.groupsList.appendChild(div);
-            });
-        }
-
-        // ПЕРЕВІРКА НА АДМІНА
-        elements.searchInput.oninput = (e) => {
-            const val = e.target.value;
-            if (val === ADMIN_PASS) {
-                isAdmin = true;
-                elements.body.classList.add('is-admin');
-                elements.status.innerText = "Режим Адміна: Увімкнено";
-                elements.status.classList.add('active');
-                elements.searchInput.value = ""; // Очищуємо після входу
-                renderGroups();
-            } else {
-                renderGroups(val);
-            }
-        };
-
-        function deleteGroup(event, id) {
-            event.stopPropagation();
-            if (!isAdmin) return; // Захист рівня коду
-            
-            if (confirm("Видалити цю гільдію назавжди?")) {
-                groups = groups.filter(g => g.id !== id);
-                if (activeId === id) {
-                    activeId = null;
-                    elements.msgArea.style.display = 'none';
-                    elements.headerTitle.innerText = "Оберіть гільдію";
+            groups.forEach(g => {
+                if (g.name.toLowerCase().includes(filter.toLowerCase())) {
+                    const div = document.createElement('div');
+                    div.className = 'group-item' + (g.id === activeId ? ' active' : '');
+                    div.innerHTML = `
+                        <span># ${g.name}</span>
+                        <span class="del-btn" onclick="deleteGroup(event, ${g.id})">×</span>
+                    `;
+                    div.onclick = () => openChat(g.id);
+                    elements.groupsList.appendChild(div);
                 }
-                save();
-                renderGroups();
-            }
+            });
         }
 
         function openChat(id) {
@@ -182,7 +171,6 @@
             const group = groups.find(g => g.id === id);
             elements.headerTitle.innerText = "# " + group.name;
             elements.msgArea.style.display = 'flex';
-            elements.startCall.style.display = 'block';
             renderMessages();
             renderGroups(elements.searchInput.value);
         }
@@ -190,38 +178,70 @@
         function renderMessages() {
             elements.messagesBox.innerHTML = '';
             const group = groups.find(g => g.id === activeId);
-            if (!group) return;
+            if (!group || !group.messages) return;
+            
             group.messages.forEach(m => {
                 const div = document.createElement('div');
-                div.className = 'message mine';
-                div.innerText = m;
+                div.className = 'message' + (m.admin ? ' mine' : '');
+                div.innerHTML = `<small style="display:block; font-size:10px; opacity:0.6;">${m.user}</small>${m.text}`;
                 elements.messagesBox.appendChild(div);
             });
             elements.messagesBox.scrollTop = elements.messagesBox.scrollHeight;
         }
 
+        // --- ДІЇ ---
         document.getElementById('createBtn').onclick = () => {
             const name = document.getElementById('groupInput').value.trim();
             if (name) {
-                groups.push({ id: Date.now(), name, messages: [] });
-                save();
+                const newGroup = { id: Date.now(), name, messages: [] };
+                groups.push(newGroup);
+                saveToCloud();
                 document.getElementById('groupInput').value = '';
-                renderGroups();
             }
         };
 
-        document.getElementById('sendBtn').onclick = () => {
-            const text = document.getElementById('msgInput').value.trim();
+        document.getElementById('sendBtn').onclick = sendMessage;
+        elements.msgInput.onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
+
+        function sendMessage() {
+            const text = elements.msgInput.value.trim();
             if (text && activeId) {
-                groups.find(g => g.id === activeId).messages.push(text);
-                save();
-                document.getElementById('msgInput').value = '';
-                renderMessages();
+                const groupIdx = groups.findIndex(g => g.id === activeId);
+                if (!groups[groupIdx].messages) groups[groupIdx].messages = [];
+                
+                groups[groupIdx].messages.push({
+                    text: text,
+                    user: isAdmin ? "Адмін" : "Користувач",
+                    admin: isAdmin
+                });
+                
+                saveToCloud();
+                elements.msgInput.value = '';
+            }
+        }
+
+        function deleteGroup(event, id) {
+            event.stopPropagation();
+            if (!isAdmin) return;
+            if (confirm("Видалити цю гільдію для всіх?")) {
+                groups = groups.filter(g => g.id !== id);
+                if (activeId === id) activeId = null;
+                saveToCloud();
+            }
+        }
+
+        elements.searchInput.oninput = (e) => {
+            if (e.target.value === ADMIN_PASS) {
+                isAdmin = true;
+                elements.body.classList.add('is-admin');
+                elements.status.innerText = "Режим Адміна: Увімкнено";
+                elements.status.classList.add('active');
+                elements.searchInput.value = "";
+                renderGroups();
+            } else {
+                renderGroups(e.target.value);
             }
         };
-
-        renderGroups();
     </script>
 </body>
 </html>
-
