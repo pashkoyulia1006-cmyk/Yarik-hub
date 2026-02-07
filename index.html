@@ -27,6 +27,7 @@
             overflow: hidden;
         }
 
+        /* --- SIDEBAR --- */
         .sidebar {
             width: 300px;
             background: var(--sidebar);
@@ -66,6 +67,7 @@
         .del-btn:hover { color: var(--danger); }
         body.is-admin .del-btn { display: block; }
 
+        /* --- ЧАТ --- */
         .chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
         #chatHeader {
             padding: 15px 25px; background: #111; border-bottom: 1px solid #282828;
@@ -108,23 +110,27 @@
     </div>
 
     <script>
-        // --- НАЛАШТУВАННЯ FIREBASE ---
-        // УВАГА: Заміни ці дані на свої з консолі Firebase, щоб база працювала вічно.
-        // Поки що стоїть демо-конфігурація (вона може мати ліміти).
+        // --- КОНФІГУРАЦІЯ FIREBASE (Встав сюди свої дані) ---
         const firebaseConfig = {
-            apiKey: "AIzaSyAs-DEMO-ONLY",
-            databaseURL: "https://yartal-hub-default-rtdb.firebaseio.com", 
-            projectId: "yartal-hub"
+            apiKey: "AIzaSyCLNQ8OJlcqHlpo-LRR_YmLzxdN8-pw_BY",
+            authDomain: "yarthal-hub.firebaseapp.com",
+            databaseURL: "https://yarthal-hub-default-rtdb.firebaseio.com", // Наприклад: https://myproject-default-rtdb.firebaseio.com/
+            projectId: "yarthal-hub",
+            storageBucket: "yarthal-hub.firebasestorage.app",
+            messagingSenderId: "937423034757",
+            appId: "1:937423034757:web:621d82cebac0ca380a8cec"
+             measurementId: "G-HQGJX0PQ3C"
         };
 
+        // Ініціалізація Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // --- ДАНІ ---
+        // --- ЛОГІКА САЙТУ ---
         let groups = [];
         let activeId = null;
         let isAdmin = false;
-        const ADMIN_PASS = "admin123"; 
+        const ADMIN_PASS = "admin123"; // Твій пароль адміна
 
         const elements = {
             searchInput: document.getElementById('searchInput'),
@@ -137,12 +143,12 @@
             msgInput: document.getElementById('msgInput')
         };
 
-        // --- СИНХРОНІЗАЦІЯ З ХМАРОЮ ---
+        // Збереження в хмару
         function saveToCloud() {
             db.ref('groups').set(groups);
         }
 
-        // Слухаємо базу даних у реальному часі
+        // Отримання даних з хмари в реальному часі
         db.ref('groups').on('value', (snapshot) => {
             const data = snapshot.val();
             groups = data || [];
@@ -189,20 +195,18 @@
             elements.messagesBox.scrollTop = elements.messagesBox.scrollHeight;
         }
 
-        // --- ДІЇ ---
+        // Створення гільдії
         document.getElementById('createBtn').onclick = () => {
             const name = document.getElementById('groupInput').value.trim();
             if (name) {
-                const newGroup = { id: Date.now(), name, messages: [] };
+                const newGroup = { id: Date.now(), name: name, messages: [] };
                 groups.push(newGroup);
                 saveToCloud();
                 document.getElementById('groupInput').value = '';
             }
         };
 
-        document.getElementById('sendBtn').onclick = sendMessage;
-        elements.msgInput.onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
-
+        // Відправка повідомлення
         function sendMessage() {
             const text = elements.msgInput.value.trim();
             if (text && activeId) {
@@ -211,7 +215,7 @@
                 
                 groups[groupIdx].messages.push({
                     text: text,
-                    user: isAdmin ? "Адмін" : "Користувач",
+                    user: isAdmin ? "Адмін" : "Гість",
                     admin: isAdmin
                 });
                 
@@ -220,16 +224,25 @@
             }
         }
 
+        document.getElementById('sendBtn').onclick = sendMessage;
+        elements.msgInput.onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
+
+        // Видалення (тільки для адміна)
         function deleteGroup(event, id) {
             event.stopPropagation();
             if (!isAdmin) return;
-            if (confirm("Видалити цю гільдію для всіх?")) {
+            if (confirm("Видалити цю гільдію для ВСІХ користувачів?")) {
                 groups = groups.filter(g => g.id !== id);
-                if (activeId === id) activeId = null;
+                if (activeId === id) {
+                    activeId = null;
+                    elements.msgArea.style.display = 'none';
+                    elements.headerTitle.innerText = "Оберіть гільдію";
+                }
                 saveToCloud();
             }
         }
 
+        // Пошук та логін адміна
         elements.searchInput.oninput = (e) => {
             if (e.target.value === ADMIN_PASS) {
                 isAdmin = true;
