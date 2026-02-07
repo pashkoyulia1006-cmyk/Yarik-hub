@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yartal Hub</title>
+    <title>Yartal Hub | Admin Edition</title>
     <style>
         :root {
             --primary: #b38d1d;
@@ -35,6 +35,9 @@
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #282828; }
         .sidebar-header h1 { color: var(--primary); font-size: 1.2rem; margin: 0; letter-spacing: 2px; }
 
+        .admin-status { font-size: 10px; color: #555; text-transform: uppercase; margin-top: 5px; }
+        .admin-status.active { color: var(--primary); font-weight: bold; }
+
         .create-area, .search-area { padding: 15px; border-bottom: 1px solid #282828; }
         input {
             width: 100%; padding: 10px; background: #222; border: 1px solid #333;
@@ -47,54 +50,51 @@
         }
 
         #groupsList { flex-grow: 1; overflow-y: auto; padding: 10px; }
+        
         .group-item {
             padding: 12px; background: #1e1e1e; margin-bottom: 8px; border-radius: 5px;
             cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            border-left: 3px solid transparent;
         }
-        .group-item.active { border-left: 4px solid var(--primary); background: #252525; }
+        .group-item:hover { background: #252525; }
+        .group-item.active { border-left-color: var(--primary); background: #252525; }
 
-        /* --- CHAT & VIDEO --- */
-        .chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+        /* Кнопка видалення (прихована за замовчуванням) */
+        .del-btn { 
+            color: #555; display: none; font-weight: bold; padding: 0 5px; 
+        }
+        .del-btn:hover { color: var(--danger); }
         
+        /* Клас, який покаже кнопки, якщо ти адмін */
+        body.is-admin .del-btn { display: block; }
+
+        /* --- CHAT --- */
+        .chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
         #chatHeader {
             padding: 15px 25px; background: #111; border-bottom: 1px solid #282828;
             display: flex; justify-content: space-between; align-items: center;
         }
-
-        .call-btn {
-            background: #28a745; color: white; border: none; padding: 8px 15px;
-            border-radius: 5px; cursor: pointer; font-size: 0.8rem;
-        }
+        .call-btn { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
 
         #messagesBox { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .message.mine { background: var(--primary); color: black; align-self: flex-end; padding: 10px; border-radius: 10px; }
+        .message.mine { background: var(--primary); color: black; align-self: flex-end; padding: 10px; border-radius: 10px; max-width: 70%; }
 
         .input-box { padding: 20px; background: #151515; display: flex; gap: 10px; }
-
-        /* --- VIDEO CALL OVERLAY --- */
-        #videoOverlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); display: none; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 100;
-        }
-
-        .video-container { display: flex; gap: 20px; margin-bottom: 20px; }
-        video { width: 400px; height: 300px; background: #222; border-radius: 10px; object-fit: cover; border: 2px solid var(--primary); }
-        
-        .call-controls { display: flex; gap: 15px; }
-        .end-call { background: var(--danger) !important; color: white !important; width: auto !important; padding: 10px 30px !important; }
     </style>
 </head>
-<body>
+<body id="mainBody">
 
     <div class="sidebar">
-        <div class="sidebar-header"><h1>YARTAL HUB</h1></div>
+        <div class="sidebar-header">
+            <h1>YARTAL HUB</h1>
+            <div id="adminStatus" class="admin-status">Гість</div>
+        </div>
         <div class="create-area">
             <input type="text" id="groupInput" placeholder="Назва гільдії...">
             <button class="btn" id="createBtn">СТВОРИТИ</button>
         </div>
         <div class="search-area">
-            <input type="text" id="searchInput" placeholder="Шукати...">
+            <input type="text" id="searchInput" placeholder="Пошук (або пароль)...">
         </div>
         <div id="groupsList"></div>
     </div>
@@ -104,19 +104,7 @@
             <span id="headerTitle">Оберіть гільдію</span>
             <button id="startCall" class="call-btn" style="display: none;">ВІДЕОДЗВІНОК</button>
         </div>
-
-        <div id="videoOverlay">
-            <div class="video-container">
-                <video id="localVideo" autoplay muted playsinline></video>
-                <video id="remoteVideo" autoplay playsinline></video>
-            </div>
-            <div class="call-controls">
-                <button class="btn end-call" id="endCallBtn">ЗАВЕРШИТИ</button>
-            </div>
-        </div>
-
         <div id="messagesBox"></div>
-        
         <div class="input-box" id="msgArea" style="display: none;">
             <input type="text" id="msgInput" placeholder="Повідомлення..." style="margin:0;">
             <button class="btn" id="sendBtn" style="width: 80px;">➤</button>
@@ -126,18 +114,19 @@
     <script>
         let groups = JSON.parse(localStorage.getItem('yartal_save')) || [];
         let activeId = null;
-        let localStream = null;
+        let isAdmin = false;
+        
+        // --- Твій секретний пароль ---
+        const ADMIN_PASS = "Yarthal20162023"; 
 
         const elements = {
-            groupInput: document.getElementById('groupInput'),
+            searchInput: document.getElementById('searchInput'),
+            body: document.getElementById('mainBody'),
+            status: document.getElementById('adminStatus'),
             groupsList: document.getElementById('groupsList'),
             messagesBox: document.getElementById('messagesBox'),
-            chatHeader: document.getElementById('headerTitle'),
+            headerTitle: document.getElementById('headerTitle'),
             msgArea: document.getElementById('msgArea'),
-            msgInput: document.getElementById('msgInput'),
-            searchInput: document.getElementById('searchInput'),
-            videoOverlay: document.getElementById('videoOverlay'),
-            localVideo: document.getElementById('localVideo'),
             startCall: document.getElementById('startCall')
         };
 
@@ -148,16 +137,50 @@
             groups.filter(g => g.name.toLowerCase().includes(filter.toLowerCase())).forEach(g => {
                 const div = document.createElement('div');
                 div.className = 'group-item' + (g.id === activeId ? ' active' : '');
-                div.innerHTML = `<span># ${g.name}</span>`;
+                div.innerHTML = `
+                    <span># ${g.name}</span>
+                    <span class="del-btn" onclick="deleteGroup(event, ${g.id})">×</span>
+                `;
                 div.onclick = () => openChat(g.id);
                 elements.groupsList.appendChild(div);
             });
         }
 
+        // ПЕРЕВІРКА НА АДМІНА
+        elements.searchInput.oninput = (e) => {
+            const val = e.target.value;
+            if (val === ADMIN_PASS) {
+                isAdmin = true;
+                elements.body.classList.add('is-admin');
+                elements.status.innerText = "Режим Адміна: Увімкнено";
+                elements.status.classList.add('active');
+                elements.searchInput.value = ""; // Очищуємо після входу
+                renderGroups();
+            } else {
+                renderGroups(val);
+            }
+        };
+
+        function deleteGroup(event, id) {
+            event.stopPropagation();
+            if (!isAdmin) return; // Захист рівня коду
+            
+            if (confirm("Видалити цю гільдію назавжди?")) {
+                groups = groups.filter(g => g.id !== id);
+                if (activeId === id) {
+                    activeId = null;
+                    elements.msgArea.style.display = 'none';
+                    elements.headerTitle.innerText = "Оберіть гільдію";
+                }
+                save();
+                renderGroups();
+            }
+        }
+
         function openChat(id) {
             activeId = id;
             const group = groups.find(g => g.id === id);
-            elements.chatHeader.innerText = "# " + group.name;
+            elements.headerTitle.innerText = "# " + group.name;
             elements.msgArea.style.display = 'flex';
             elements.startCall.style.display = 'block';
             renderMessages();
@@ -177,45 +200,22 @@
             elements.messagesBox.scrollTop = elements.messagesBox.scrollHeight;
         }
 
-        // --- ЛОГІКА ВІДЕОДЗВІНКА ---
-        async function startVideo() {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                elements.localVideo.srcObject = localStream;
-                elements.videoOverlay.style.display = 'flex';
-            } catch (err) {
-                alert("Помилка доступу до камери: " + err.message);
-            }
-        }
-
-        document.getElementById('startCall').onclick = startVideo;
-
-        document.getElementById('endCallBtn').onclick = () => {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
-            elements.videoOverlay.style.display = 'none';
-        };
-
-        // --- ІНШІ ПОДІЇ ---
         document.getElementById('createBtn').onclick = () => {
-            const name = elements.groupInput.value.trim();
+            const name = document.getElementById('groupInput').value.trim();
             if (name) {
                 groups.push({ id: Date.now(), name, messages: [] });
                 save();
-                elements.groupInput.value = '';
+                document.getElementById('groupInput').value = '';
                 renderGroups();
             }
         };
 
-        elements.searchInput.oninput = () => renderGroups(elements.searchInput.value);
-
         document.getElementById('sendBtn').onclick = () => {
-            const text = elements.msgInput.value.trim();
+            const text = document.getElementById('msgInput').value.trim();
             if (text && activeId) {
                 groups.find(g => g.id === activeId).messages.push(text);
                 save();
-                elements.msgInput.value = '';
+                document.getElementById('msgInput').value = '';
                 renderMessages();
             }
         };
@@ -224,4 +224,3 @@
     </script>
 </body>
 </html>
-
