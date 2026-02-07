@@ -10,6 +10,7 @@
             --bg: #0f0f0f;
             --sidebar: #151515;
             --text: #e0e0e0;
+            --accent: #222;
         }
 
         body {
@@ -44,8 +45,16 @@
             letter-spacing: 2px;
         }
 
+        /* Зона створення */
         .create-area {
             padding: 15px;
+            border-bottom: 1px solid #282828;
+        }
+
+        /* Зона пошуку */
+        .search-area {
+            padding: 15px;
+            background: #111;
             border-bottom: 1px solid #282828;
         }
 
@@ -58,6 +67,17 @@
             border-radius: 5px;
             box-sizing: border-box;
             margin-bottom: 10px;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        #searchInput {
+            margin-bottom: 0;
+            background: #1a1a1a;
         }
 
         .btn {
@@ -89,12 +109,19 @@
             border-left: 4px solid transparent;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .group-item:hover { background: #252525; }
         .group-item.active { border-left-color: var(--primary); background: #252525; }
 
-        .del-btn { color: #666; cursor: pointer; padding: 0 5px; }
+        .del-btn { color: #666; cursor: pointer; padding: 0 5px; font-size: 1.2rem; }
         .del-btn:hover { color: #ff4444; }
 
         /* --- ЗОНА ЧАТУ --- */
@@ -109,6 +136,7 @@
             background: #111;
             border-bottom: 1px solid #282828;
             font-weight: bold;
+            color: var(--primary);
         }
 
         #messagesBox {
@@ -126,6 +154,7 @@
             border-radius: 10px;
             background: #2a2a2a;
             align-self: flex-start;
+            word-wrap: break-word;
         }
 
         .message.mine {
@@ -139,6 +168,7 @@
             background: #151515;
             display: flex;
             gap: 10px;
+            border-top: 1px solid #282828;
         }
     </style>
 </head>
@@ -150,20 +180,24 @@
         </div>
         
         <div class="create-area">
-            <input type="text" id="groupInput" placeholder="Назва гільдії...">
+            <input type="text" id="groupInput" placeholder="Назва нової гільдії...">
             <button class="btn" id="createBtn">СТВОРИТИ</button>
+        </div>
+
+        <div class="search-area">
+            <input type="text" id="searchInput" placeholder="Шукати гільдію...">
         </div>
 
         <div id="groupsList"></div>
     </div>
 
     <div class="chat-main">
-        <div id="chatHeader">Оберіть гільдію</div>
+        <div id="chatHeader">Оберіть гільдію зі списку</div>
         <div id="messagesBox"></div>
         
         <div class="input-box" id="msgArea" style="display: none;">
-            <input type="text" id="msgInput" placeholder="Повідомлення..." style="margin:0;">
-            <button class="btn" id="sendBtn" style="width: 80px;">></button>
+            <input type="text" id="msgInput" placeholder="Напишіть повідомлення..." style="margin:0;">
+            <button class="btn" id="sendBtn" style="width: 80px;">➤</button>
         </div>
     </div>
 
@@ -175,6 +209,7 @@
         // --- ЕЛЕМЕНТИ ---
         const groupInput = document.getElementById('groupInput');
         const createBtn = document.getElementById('createBtn');
+        const searchInput = document.getElementById('searchInput');
         const groupsList = document.getElementById('groupsList');
         const messagesBox = document.getElementById('messagesBox');
         const chatHeader = document.getElementById('chatHeader');
@@ -188,13 +223,27 @@
             localStorage.setItem('yartal_save', JSON.stringify(groups));
         }
 
-        function renderGroups() {
+        // Рендер списку з врахуванням пошуку
+        function renderGroups(filter = "") {
             groupsList.innerHTML = '';
-            groups.forEach(g => {
+            const filteredGroups = groups.filter(g => 
+                g.name.toLowerCase().includes(filter.toLowerCase())
+            );
+
+            filteredGroups.forEach(g => {
                 const div = document.createElement('div');
                 div.className = 'group-item' + (g.id === activeId ? ' active' : '');
-                div.innerHTML = `<span># ${g.name}</span> <span class="del-btn" onclick="deleteGroup(event, ${g.id})">×</span>`;
+                div.innerHTML = `<span># ${g.name}</span> <span class="del-btn" title="Видалити">×</span>`;
+                
+                // Натискання на гільдію
                 div.onclick = () => openChat(g.id);
+                
+                // Кнопка видалення
+                div.querySelector('.del-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    deleteGroup(g.id);
+                };
+
                 groupsList.appendChild(div);
             });
         }
@@ -205,7 +254,7 @@
             chatHeader.innerText = "# " + group.name;
             msgArea.style.display = 'flex';
             renderMessages();
-            renderGroups();
+            renderGroups(searchInput.value); // Оновлюємо активний стан у списку
         }
 
         function renderMessages() {
@@ -222,30 +271,55 @@
             messagesBox.scrollTop = messagesBox.scrollHeight;
         }
 
-        function deleteGroup(e, id) {
-            e.stopPropagation();
+        function deleteGroup(id) {
+            if (!confirm("Видалити цю гільдію?")) return;
             groups = groups.filter(g => g.id !== id);
             if (activeId === id) {
                 activeId = null;
                 msgArea.style.display = 'none';
-                chatHeader.innerText = "Оберіть гільдію";
+                chatHeader.innerText = "Оберіть гільдію зі списку";
                 messagesBox.innerHTML = '';
             }
             save();
-            renderGroups();
+            renderGroups(searchInput.value);
+        }
+
+        function sendMessage() {
+            const text = msgInput.value.trim();
+            if (!text || activeId === null) return;
+
+            const group = groups.find(g => g.id === activeId);
+            group.messages.push(text);
+            save();
+            msgInput.value = '';
+            renderMessages();
         }
 
         // --- ПОДІЇ ---
 
-        // Кнопка створення
-        createBtn.addEventListener('click', () => {
+        // Створення
+        createBtn.onclick = () => {
             const name = groupInput.value.trim();
-            if (!name) {
-                alert("Введіть назву!");
-                return;
-            }
+            if (!name) return alert("Введіть назву!");
+            
             const newGroup = { id: Date.now(), name: name, messages: [] };
             groups.push(newGroup);
             save();
             groupInput.value = '';
-            renderGroups();
+            renderGroups(searchInput.value);
+        };
+
+        // Пошук (працює миттєво при введенні)
+        searchInput.oninput = () => {
+            renderGroups(searchInput.value);
+        };
+
+        // Відправка повідомлення
+        sendBtn.onclick = sendMessage;
+        msgInput.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
+
+        // Початковий рендер
+        renderGroups();
+    </script>
+</body>
+</html>
